@@ -1,4 +1,4 @@
-import ApologyLetter from '../anujin';
+import ApologyLetter from '../index';
 
 export default function Home() {
   return <ApologyLetter />;
