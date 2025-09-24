@@ -14,4 +14,4 @@ const nextConfig = {
   assetPrefix: process.env.NODE_ENV === 'production' ? '/Anujin/' : '',
 }
 
-module.exports = nextConfig
+export default nextConfig
