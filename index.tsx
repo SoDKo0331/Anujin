@@ -3,7 +3,7 @@ import { Flower, Volume2, VolumeX } from "lucide-react";
 
 // --- TYPE DEFINITIONS ---
 interface VisibleSections {
-  readonly [key: string]: boolean;
+  [key: string]: boolean;
 }
 
 interface BaseAnimatedElement {
@@ -59,8 +59,9 @@ type AnimationType = 'translate-x' | 'translate-y' | 'scale';
 // --- CONSTANTS & CONFIGURATION ---
 const CONFIG = {
   audio: {
-    mainSrc: "./CasCry.mp3",
+    mainSrc: "./cry.mp3",
     introSrc: "https://www.soundjay.com/misc/sounds/chime-02.mp3", // Placeholder - you can replace with your intro music
+    fallbackSrc: "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3", // Fallback audio source
   },
   animation: {
     intervals: { roses: 3000, smoke: 1500, stars: 4000, starWars: 6000 },
@@ -203,9 +204,140 @@ const componentStyles = `
   50% { text-shadow: 0 0 40px rgba(255, 255, 255, 0.6); }
 }
 
+/* Enhanced luxury animations */
+@keyframes luxury-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes luxury-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-8px) rotate(1deg); }
+  50% { transform: translateY(-5px) rotate(-1deg); }
+  75% { transform: translateY(-10px) rotate(1deg); }
+}
+
+@keyframes golden-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2), 
+                inset 0 0 20px rgba(212, 175, 55, 0.1); 
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.4), 
+                0 0 60px rgba(212, 175, 55, 0.2),
+                inset 0 0 30px rgba(212, 175, 55, 0.2); 
+  }
+}
+
+@keyframes luxury-text-glow {
+  0%, 100% { 
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3),
+                 0 0 20px rgba(212, 175, 55, 0.2),
+                 0 0 30px rgba(212, 175, 55, 0.1); 
+  }
+  50% { 
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
+                 0 0 40px rgba(212, 175, 55, 0.4),
+                 0 0 60px rgba(212, 175, 55, 0.2); 
+  }
+}
+
+@keyframes luxury-border {
+  0% { border-color: rgba(212, 175, 55, 0.3); }
+  50% { border-color: rgba(212, 175, 55, 0.6); }
+  100% { border-color: rgba(212, 175, 55, 0.3); }
+}
+
+@keyframes enhanced-ripple {
+  0% { 
+    transform: scale3d(0.1, 0.1, 1); 
+    opacity: 0.8; 
+    border-color: rgba(212, 175, 55, 0.4); 
+  }
+  50% { 
+    transform: scale3d(1.0, 1.0, 1); 
+    opacity: 0.4; 
+    border-color: rgba(255, 255, 255, 0.2); 
+  }
+  100% { 
+    transform: scale3d(2.0, 2.0, 1); 
+    opacity: 0; 
+    border-color: rgba(212, 175, 55, 0.1); 
+  }
+}
+
 @keyframes button-glow {
   0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
   50% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.4); }
+}
+
+/* Luxury utility classes */
+.luxury-text { animation: luxury-text-glow 3s infinite ease-in-out; }
+.luxury-button {
+  position: relative;
+  overflow: hidden;
+}
+.luxury-button:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg, 
+    transparent, 
+    rgba(212, 175, 55, 0.2), 
+    transparent
+  );
+  transition: left 0.5s;
+}
+.luxury-button:hover:before {
+  left: 100%;
+}
+
+
+/* Enhanced main content styling */
+.main-title {
+  background: linear-gradient(
+    135deg, 
+    #ffffff 0%, 
+    #f8fafc 25%, 
+rgb(224, 220, 207) 50%, 
+    #f8fafc 75%, 
+    #ffffff 100%
+  );
+  background-size: 200% 200%;
+  animation: luxury-shimmer 3s infinite linear;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-text {
+  position: relative;
+}
+.section-text:before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.3) 25%,
+    rgba(212, 175, 55, 0.6) 50%,
+    rgba(212, 175, 55, 0.3) 75%,
+    transparent 100%
+  );
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+.section-text.visible:before {
+  opacity: 1;
 }
 
 /* Performance optimizations */
@@ -270,138 +402,426 @@ button:focus-visible {
 // --- CUSTOM COMPONENTS ---
 const BB8Component: React.FC<{ size: number }> = React.memo(({ size }) => (
   <div className="relative" style={{ width: size, height: size }}>
+    {/* Main Body Sphere */}
     <div
-      className="absolute bottom-0 rounded-full border-2"
+      className="absolute bottom-0 rounded-full border-2 shadow-2xl"
       style={{
         width: size * 0.8,
         height: size * 0.8,
-        backgroundColor: '#F5F5F5',
+        background: 'linear-gradient(145deg, #ffffff 0%, #f0f0f0 25%, #e8e8e8 50%, #d5d5d5 75%, #c0c0c0 100%)',
         borderColor: CONFIG.starWarsCharacters.bb8.color,
         left: '10%',
+        boxShadow: `
+          0 0 20px rgba(255, 107, 53, 0.3),
+          inset 0 0 15px rgba(255, 255, 255, 0.8),
+          inset 0 -10px 20px rgba(0, 0, 0, 0.1)
+        `,
       }}
     >
+      {/* Orange Central Panel */}
       <div
-        className="absolute rounded-full"
+        className="absolute rounded-full border"
         style={{
-          width: '30%',
-          height: '30%',
-          backgroundColor: CONFIG.starWarsCharacters.bb8.color,
-          top: '20%',
-          left: '35%',
+          width: '35%',
+          height: '35%',
+          background: `linear-gradient(135deg, ${CONFIG.starWarsCharacters.bb8.color} 0%, #e55a2b 50%, #cc4a1f 100%)`,
+          top: '18%',
+          left: '32%',
+          borderColor: '#b8441a',
+          boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 107, 53, 0.4)',
+        }}
+      >
+        {/* Inner orange details */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '60%',
+            height: '60%',
+            background: 'linear-gradient(45deg, rgba(255, 255, 255, 0.3) 0%, transparent 100%)',
+            top: '10%',
+            left: '10%',
+          }}
+        />
+      </div>
+      
+      {/* Side Panels */}
+      <div
+        className="absolute rounded-full border"
+        style={{
+          width: '18%',
+          height: '18%',
+          background: 'linear-gradient(135deg, #ddd 0%, #999 100%)',
+          borderColor: '#666',
+          top: '58%',
+          left: '20%',
+          boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.4)',
         }}
       />
       <div
         className="absolute rounded-full border"
         style={{
-          width: '15%',
-          height: '15%',
-          borderColor: '#333',
-          top: '60%',
-          left: '25%',
+          width: '12%',
+          height: '12%',
+          background: 'linear-gradient(135deg, #ddd 0%, #999 100%)',
+          borderColor: '#666',
+          top: '25%',
+          left: '70%',
+          boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.4)',
+        }}
+      />
+      
+      {/* Body Seam Lines */}
+      <div
+        className="absolute"
+        style={{
+          width: '90%',
+          height: '1px',
+          background: 'linear-gradient(90deg, transparent 0%, #aaa 50%, transparent 100%)',
+          top: '50%',
+          left: '5%',
         }}
       />
     </div>
+    
+    {/* Head Sphere */}
     <div
-      className="absolute rounded-full border-2"
+      className="absolute rounded-full border-2 shadow-xl"
       style={{
         width: size * 0.5,
         height: size * 0.5,
-        backgroundColor: '#F5F5F5',
+        background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 25%, #ebebeb 50%, #d8d8d8 75%, #c5c5c5 100%)',
         borderColor: CONFIG.starWarsCharacters.bb8.color,
-        top: '-10%',
+        top: '-8%',
         left: '25%',
+        boxShadow: `
+          0 0 15px rgba(255, 107, 53, 0.2),
+          inset 0 0 10px rgba(255, 255, 255, 0.9),
+          inset 0 -5px 15px rgba(0, 0, 0, 0.05)
+        `,
       }}
     >
+      {/* Main Eye */}
       <div
-        className="absolute rounded-full"
+        className="absolute rounded-full border-2"
         style={{
-          width: '25%',
-          height: '25%',
-          backgroundColor: '#333',
-          top: '35%',
-          left: '40%',
+          width: '30%',
+          height: '30%',
+          background: 'radial-gradient(circle at 30% 30%, #4a90e2 0%, #2c5aa0 50%, #1a365d 100%)',
+          borderColor: '#333',
+          top: '32%',
+          left: '35%',
+          boxShadow: `
+            0 0 8px rgba(74, 144, 226, 0.5),
+            inset 0 0 5px rgba(255, 255, 255, 0.3)
+          `,
         }}
-      />
+      >
+        {/* Eye Lens Reflection */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '40%',
+            height: '40%',
+            background: 'radial-gradient(circle at top left, rgba(255, 255, 255, 0.8) 0%, transparent 60%)',
+            top: '15%',
+            left: '20%',
+          }}
+        />
+      </div>
+      
+      {/* Antenna */}
+      <div
+        className="absolute"
+        style={{
+          width: '3px',
+          height: size * 0.15,
+          background: 'linear-gradient(180deg, #666 0%, #999 50%, #666 100%)',
+          top: '8%',
+          left: '48%',
+          borderRadius: '2px',
+          boxShadow: '0 0 3px rgba(0, 0, 0, 0.5)',
+        }}
+      >
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '6px',
+            height: '6px',
+            background: 'radial-gradient(circle, #ff4444 0%, #cc0000 100%)',
+            top: '-3px',
+            left: '-1.5px',
+            boxShadow: '0 0 4px rgba(255, 68, 68, 0.6)',
+          }}
+        />
+      </div>
     </div>
   </div>
 ));
 
 const YodaComponent: React.FC<{ size: number }> = React.memo(({ size }) => (
   <div className="relative" style={{ width: size, height: size }}>
+    {/* Body/Robe */}
     <div
-      className="absolute bottom-0 rounded-t-full"
+      className="absolute bottom-0 rounded-t-full shadow-2xl"
       style={{
         width: size * 0.9,
         height: size * 0.7,
-        backgroundColor: '#8B4513',
+        background: 'linear-gradient(180deg, #8B4513 0%, #654321 30%, #4a2c17 60%, #3d1f0f 100%)',
         left: '5%',
-      }}
-    />
-    <div
-      className="absolute rounded-full"
-      style={{
-        width: size * 0.6,
-        height: size * 0.5,
-        backgroundColor: CONFIG.starWarsCharacters.yoda.color,
-        top: '15%',
-        left: '20%',
+        boxShadow: `
+          0 0 20px rgba(139, 69, 19, 0.4),
+          inset 0 0 15px rgba(255, 255, 255, 0.1),
+          inset 0 -10px 20px rgba(0, 0, 0, 0.3)
+        `,
       }}
     >
+      {/* Robe Details */}
       <div
-        className="absolute rounded-full"
+        className="absolute"
         style={{
-          width: '20%',
-          height: '40%',
-          backgroundColor: CONFIG.starWarsCharacters.yoda.color,
-          top: '10%',
-          left: '-5%',
-          transform: 'rotate(-20deg)',
+          width: '2px',
+          height: '60%',
+          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%)',
+          top: '20%',
+          left: '30%',
         }}
       />
       <div
-        className="absolute rounded-full"
+        className="absolute"
         style={{
-          width: '20%',
-          height: '40%',
-          backgroundColor: CONFIG.starWarsCharacters.yoda.color,
-          top: '10%',
-          right: '-5%',
-          transform: 'rotate(20deg)',
-        }}
-      />
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: '12%',
-          height: '12%',
-          backgroundColor: '#333',
-          top: '45%',
-          left: '25%',
-        }}
-      />
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: '12%',
-          height: '12%',
-          backgroundColor: '#333',
-          top: '45%',
-          right: '25%',
+          width: '2px',
+          height: '60%',
+          background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%)',
+          top: '20%',
+          right: '30%',
         }}
       />
     </div>
+    
+    {/* Head */}
     <div
-      className="absolute"
+      className="absolute rounded-full shadow-xl"
       style={{
-        width: '8%',
-        height: size * 0.4,
-        backgroundColor: CONFIG.starWarsCharacters.yoda.color,
-        top: '25%',
-        right: '10%',
-        borderRadius: '2px',
-        boxShadow: `0 0 8px ${CONFIG.starWarsCharacters.yoda.color}`,
+        width: size * 0.6,
+        height: size * 0.5,
+        background: 'linear-gradient(145deg, #7dd87a 0%, #4ade80 25%, #22c55e 50%, #16a34a 75%, #15803d 100%)',
+        top: '15%',
+        left: '20%',
+        boxShadow: `
+          0 0 15px rgba(74, 222, 128, 0.3),
+          inset 0 0 10px rgba(255, 255, 255, 0.2),
+          inset 0 -8px 15px rgba(0, 0, 0, 0.1)
+        `,
       }}
-    />
+    >
+      {/* Wrinkle Lines */}
+      <div
+        className="absolute"
+        style={{
+          width: '40%',
+          height: '1px',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.3) 50%, transparent 100%)',
+          top: '65%',
+          left: '30%',
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          width: '30%',
+          height: '1px',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.2) 50%, transparent 100%)',
+          top: '75%',
+          left: '35%',
+        }}
+      />
+      
+      {/* Left Ear */}
+      <div
+        className="absolute rounded-full shadow-lg"
+        style={{
+          width: '22%',
+          height: '45%',
+          background: 'linear-gradient(135deg, #7dd87a 0%, #4ade80 50%, #22c55e 100%)',
+          top: '8%',
+          left: '-8%',
+          transform: 'rotate(-25deg)',
+          boxShadow: `
+            0 0 8px rgba(74, 222, 128, 0.2),
+            inset 0 0 5px rgba(255, 255, 255, 0.3),
+            inset 0 -3px 8px rgba(0, 0, 0, 0.1)
+          `,
+        }}
+      >
+        {/* Ear Details */}
+        <div
+          className="absolute"
+          style={{
+            width: '60%',
+            height: '1px',
+            background: 'rgba(0, 0, 0, 0.2)',
+            top: '30%',
+            left: '20%',
+          }}
+        />
+      </div>
+      
+      {/* Right Ear */}
+      <div
+        className="absolute rounded-full shadow-lg"
+        style={{
+          width: '22%',
+          height: '45%',
+          background: 'linear-gradient(135deg, #7dd87a 0%, #4ade80 50%, #22c55e 100%)',
+          top: '8%',
+          right: '-8%',
+          transform: 'rotate(25deg)',
+          boxShadow: `
+            0 0 8px rgba(74, 222, 128, 0.2),
+            inset 0 0 5px rgba(255, 255, 255, 0.3),
+            inset 0 -3px 8px rgba(0, 0, 0, 0.1)
+          `,
+        }}
+      >
+        {/* Ear Details */}
+        <div
+          className="absolute"
+          style={{
+            width: '60%',
+            height: '1px',
+            background: 'rgba(0, 0, 0, 0.2)',
+            top: '30%',
+            left: '20%',
+          }}
+        />
+      </div>
+      
+      {/* Left Eye */}
+      <div
+        className="absolute rounded-full shadow-inner"
+        style={{
+          width: '14%',
+          height: '14%',
+          background: 'radial-gradient(circle at 30% 30%, #4a4a4a 0%, #333 50%, #1a1a1a 100%)',
+          top: '42%',
+          left: '22%',
+          boxShadow: `
+            inset 0 0 3px rgba(0, 0, 0, 0.8),
+            0 0 2px rgba(255, 255, 255, 0.1)
+          `,
+        }}
+      >
+        {/* Eye Highlight */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '25%',
+            height: '25%',
+            background: 'rgba(255, 255, 255, 0.3)',
+            top: '20%',
+            left: '30%',
+          }}
+        />
+      </div>
+      
+      {/* Right Eye */}
+      <div
+        className="absolute rounded-full shadow-inner"
+        style={{
+          width: '14%',
+          height: '14%',
+          background: 'radial-gradient(circle at 30% 30%, #4a4a4a 0%, #333 50%, #1a1a1a 100%)',
+          top: '42%',
+          right: '22%',
+          boxShadow: `
+            inset 0 0 3px rgba(0, 0, 0, 0.8),
+            0 0 2px rgba(255, 255, 255, 0.1)
+          `,
+        }}
+      >
+        {/* Eye Highlight */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: '25%',
+            height: '25%',
+            background: 'rgba(255, 255, 255, 0.3)',
+            top: '20%',
+            left: '30%',
+          }}
+        />
+      </div>
+      
+      {/* Nose */}
+      <div
+        className="absolute"
+        style={{
+          width: '8%',
+          height: '6%',
+          background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.1) 100%)',
+          top: '58%',
+          left: '46%',
+          borderRadius: '50%',
+        }}
+      />
+    </div>
+    
+    {/* Lightsaber */}
+    <div
+      className="absolute shadow-lg"
+      style={{
+        width: '4px',
+        height: size * 0.4,
+        background: 'linear-gradient(180deg, #8B4513 0%, #654321 30%, #4a2c17 100%)',
+        top: '25%',
+        right: '8%',
+        borderRadius: '2px',
+        boxShadow: '0 0 3px rgba(0, 0, 0, 0.5)',
+      }}
+    >
+      {/* Lightsaber Hilt Details */}
+      <div
+        className="absolute"
+        style={{
+          width: '6px',
+          height: '8px',
+          background: 'linear-gradient(135deg, #999 0%, #666 100%)',
+          top: '15%',
+          left: '-1px',
+          borderRadius: '1px',
+        }}
+      />
+      <div
+        className="absolute"
+        style={{
+          width: '6px',
+          height: '6px',
+          background: 'linear-gradient(135deg, #999 0%, #666 100%)',
+          top: '35%',
+          left: '-1px',
+          borderRadius: '1px',
+        }}
+      />
+      
+      {/* Lightsaber Blade */}
+      <div
+        className="absolute"
+        style={{
+          width: '2px',
+          height: size * 0.25,
+          background: `linear-gradient(180deg, ${CONFIG.starWarsCharacters.yoda.color} 0%, rgba(74, 222, 128, 0.8) 50%, rgba(74, 222, 128, 0.4) 100%)`,
+          top: '-40%',
+          left: '1px',
+          borderRadius: '1px',
+          boxShadow: `
+            0 0 8px ${CONFIG.starWarsCharacters.yoda.color},
+            0 0 15px ${CONFIG.starWarsCharacters.yoda.color},
+            0 0 20px rgba(74, 222, 128, 0.3)
+          `,
+          filter: 'blur(0.5px)',
+        }}
+      />
+    </div>
   </div>
 ));
 
@@ -653,9 +1073,9 @@ const useParticleEffects = (isEnabled: boolean) => {
 
     switch (type) {
       case 'rose':
-        return { ...baseElement, rotation: Math.random() * 360 };
+        return { ...baseElement, rotation: Math.random() * 360 } as AnimatedElement;
       case 'smoke':
-        return { ...baseElement, x: Math.random() * 20 + 75, delay: Math.random() * 2 };
+        return { ...baseElement, x: Math.random() * 20 + 75, delay: Math.random() * 2 } as AnimatedElement;
       case 'star':
         return {
           ...baseElement,
@@ -663,7 +1083,7 @@ const useParticleEffects = (isEnabled: boolean) => {
           left: Math.random() * 100,
           delay: Math.random() * 10,
           duration: Math.random() * 3 + 2,
-        };
+        } as ShootingStar;
       case 'bb8':
         return {
           ...baseElement,
@@ -672,7 +1092,7 @@ const useParticleEffects = (isEnabled: boolean) => {
           size: CONFIG.starWarsCharacters.bb8.size,
           animationDuration: CONFIG.starWarsCharacters.bb8.animationDuration + Math.random() * 3,
           character: 'bb8',
-        };
+        } as StarWarsCharacter;
       case 'yoda':
         return {
           ...baseElement,
@@ -681,7 +1101,7 @@ const useParticleEffects = (isEnabled: boolean) => {
           size: CONFIG.starWarsCharacters.yoda.size,
           animationDuration: CONFIG.starWarsCharacters.yoda.animationDuration + Math.random() * 5,
           character: 'yoda',
-        };
+        } as StarWarsCharacter;
       default:
         throw new Error(`Unknown particle type: ${type satisfies never}`);
     }
@@ -694,24 +1114,24 @@ const useParticleEffects = (isEnabled: boolean) => {
       setInterval(() =>
         setParticles(prev => ({
           ...prev,
-          roses: [...prev.roses.slice(-CONFIG.animation.maxParticles.roses + 1), generateParticle('rose')],
+          roses: [...prev.roses.slice(-CONFIG.animation.maxParticles.roses + 1), generateParticle('rose') as AnimatedElement],
         })), CONFIG.animation.intervals.roses),
       setInterval(() =>
         setParticles(prev => ({
           ...prev,
-          smoke: [...prev.smoke.slice(-CONFIG.animation.maxParticles.smoke + 1), generateParticle('smoke')],
+          smoke: [...prev.smoke.slice(-CONFIG.animation.maxParticles.smoke + 1), generateParticle('smoke') as AnimatedElement],
         })), CONFIG.animation.intervals.smoke),
       setInterval(() =>
         setParticles(prev => ({
           ...prev,
-          stars: [...prev.stars.slice(-CONFIG.animation.maxParticles.stars + 1), generateParticle('star')],
+          stars: [...prev.stars.slice(-CONFIG.animation.maxParticles.stars + 1), generateParticle('star') as ShootingStar],
         })), CONFIG.animation.intervals.stars),
       setInterval(() =>
         setParticles(prev => ({
           ...prev,
           starWarsCharacters: [
             ...prev.starWarsCharacters.slice(-CONFIG.animation.maxParticles.starWars + 1),
-            generateParticle(Math.random() < 0.5 ? 'bb8' : 'yoda'),
+            generateParticle(Math.random() < 0.5 ? 'bb8' : 'yoda') as StarWarsCharacter,
           ],
         })), CONFIG.animation.intervals.starWars),
     ];
@@ -759,61 +1179,128 @@ const IntroScreen: React.FC<{ onSkip: () => void; onUserGesture: () => void }> =
         className="relative w-80 h-80 rounded-full flex items-center justify-center"
         style={{
           animation: "intro-background 4s ease-in-out forwards, intro-glow 4s ease-in-out infinite",
-          background: "radial-gradient(circle at center, rgba(139,69,19,0.3) 0%, rgba(0,0,0,0.8) 70%)",
-          backdropFilter: "blur(20px)",
+          background: "radial-gradient(circle at center, rgba(139,69,19,0.4) 0%, rgba(75, 85, 99, 0.3) 40%, rgba(0,0,0,0.9) 100%)",
+          backdropFilter: "blur(25px)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          boxShadow: `
+            0 0 80px rgba(139, 69, 19, 0.3),
+            inset 0 0 50px rgba(255, 255, 255, 0.05),
+            0 20px 60px rgba(0, 0, 0, 0.5)
+          `,
         }}
       >
-        {[...Array(2)].map((_, i) => (
-          <div
-            key={i}
-            className={`absolute inset-${4 + i * 4} rounded-full border border-white/20 opacity-${60 - i * 20}`}
-            aria-hidden="true"
-          />
-        ))}
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-4 h-4 opacity-30"
-            style={{
-              top: "20%",
-              left: "50%",
-              transformOrigin: "2px 120px",
-              transform: `rotate(${i * 60}deg)`,
-              animation: `floating-petals ${3 + i * 0.5}s ease-in-out infinite ${i * 0.3}s`,
-            }}
-            aria-hidden="true"
-          >
-            <Flower className="text-white/60" size={16} />
-          </div>
-        ))}
-        <Flower
-          className="text-white relative z-10"
-          size={120}
-          style={{ animation: "flower-intro 4s ease-in-out forwards", filter: "drop-shadow(0 0 20px rgba(255,255,255,0.5))" }}
-          aria-hidden="true"
-        />
+        {/* Luxury ornamental rings */}
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className={`absolute w-${60 + i * 20} h-${60 + i * 20} rounded-full border border-white/${20 - i * 5} pointer-events-none`}
-            style={{ animation: `ripple ${3 + i}s ease-out infinite ${i}s` }}
+            className="absolute rounded-full border opacity-30"
+            style={{
+              inset: `${15 + i * 15}px`,
+              borderColor: i === 1 ? '#d4af37' : 'rgba(255, 255, 255, 0.2)',
+              borderWidth: i === 1 ? '2px' : '1px',
+              background: i === 1 ? 'linear-gradient(45deg, rgba(212, 175, 55, 0.1) 0%, transparent 100%)' : 'none',
+            }}
+            aria-hidden="true"
+          />
+        ))}
+        
+        {/* Floating petals with luxury feel */}
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-5 h-5 opacity-40"
+            style={{
+              top: "15%",
+              left: "50%",
+              transformOrigin: "2.5px 140px",
+              transform: `rotate(${i * 45}deg)`,
+              animation: `floating-petals ${4 + i * 0.3}s ease-in-out infinite ${i * 0.2}s`,
+            }}
+            aria-hidden="true"
+          >
+            <Flower 
+              className="text-amber-200" 
+              size={20} 
+              style={{ 
+                filter: 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.4))',
+              }}
+            />
+          </div>
+        ))}
+        
+        {/* Central flower with luxury styling */}
+        <Flower
+          className="text-white relative z-10"
+          size={140}
+          style={{ 
+            animation: "flower-intro 4s ease-in-out forwards", 
+            filter: `
+              drop-shadow(0 0 30px rgba(255,255,255,0.6))
+              drop-shadow(0 0 60px rgba(212, 175, 55, 0.3))
+            `,
+          }}
+          aria-hidden="true"
+        />
+        
+        {/* Enhanced ripple effects */}
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full border pointer-events-none"
+            style={{ 
+              width: `${80 + i * 30}px`,
+              height: `${80 + i * 30}px`,
+              borderColor: i % 2 === 0 ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.15)',
+              animation: `enhanced-ripple ${4 + i * 0.5}s ease-out infinite ${i * 0.8}s`,
+            }}
             aria-hidden="true"
           />
         ))}
       </div>
+      
       <div className="mt-12 text-center">
-        <h1 className="text-2xl md:text-4xl font-light text-white/90 mb-2 tracking-wider animate-text-glow">
+        <h1 className="text-3xl md:text-5xl font-light text-white/95 mb-4 tracking-wider animate-text-glow luxury-text">
           A Cosmic Love Letter
         </h1>
-        <p className="text-sm text-white/60 tracking-widest uppercase">Transmitting Message...</p>
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
+          <div className="w-2 h-2 rounded-full bg-amber-400/80 shadow-lg shadow-amber-400/50" />
+          <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
+        </div>
+        <p className="text-sm text-white/70 tracking-widest uppercase font-light mb-2">
+          Transmitting Message...
+        </p>
+        <div className="flex justify-center">
+          <div className="flex space-x-1">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full bg-amber-400/60"
+                style={{
+                  animation: `pulse 1.5s ease-in-out infinite ${i * 0.3}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
-      <div className="flex gap-4 mt-8">
+      
+      <div className="flex gap-4 mt-10">
         <button
           onClick={() => { onUserGesture(); onSkip(); }}
-          className="text-white/70 hover:text-white text-sm glass-effect px-8 py-3 rounded-full hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 animate-button-glow"
+          className="luxury-button text-white/80 hover:text-white text-sm px-10 py-4 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 animate-button-glow group"
+          style={{
+            background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(212, 175, 55, 0.1) 100%)',
+            backdropFilter: 'blur(15px)',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          }}
           aria-label="View message and enable audio"
         >
-          View Message
+          <span className="flex items-center gap-2 font-light tracking-wide">
+            Enter Experience
+            <div className="w-1 h-1 rounded-full bg-amber-400/80 group-hover:bg-amber-300 transition-colors" />
+          </span>
         </button>
       </div>
     </div>
@@ -827,30 +1314,50 @@ const AudioControls: React.FC<{
   onEnableAudio: () => void;
 }> = React.memo(({ audioState, onToggleMainAudio, onToggleMute, onEnableAudio }) => {
   return (
-    <div className="fixed top-6 right-6 z-50 flex gap-3" role="toolbar" aria-label="Audio controls">
+    <div className="fixed top-8 right-8 z-50 flex flex-col gap-3" role="toolbar" aria-label="Audio controls">
       {audioState.audioError && (
         <button
           onClick={onEnableAudio}
-          className="p-3 glass-effect rounded-full hover:bg-white/20 transition-all duration-300 animate-button-glow group focus:outline-none focus:ring-2 focus:ring-white/50 bg-yellow-500/20"
+          className="group p-4 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-amber-400/50 luxury-float"
+          style={{
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(245, 158, 11, 0.15) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          }}
           aria-label="Enable audio"
           title="Click to enable audio"
         >
-          <Volume2 className="w-5 h-5 text-yellow-300 group-hover:text-yellow-100" />
+          <Volume2 className="w-6 h-6 text-amber-300 group-hover:text-amber-200 transition-colors duration-300" />
+          <div className="absolute inset-0 rounded-full bg-amber-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl" />
         </button>
       )}
+      
       {!audioState.audioError && (
         <button
           onClick={onToggleMute}
-          className="p-3 glass-effect rounded-full hover:bg-white/20 transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="group p-4 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-white/50 luxury-float"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.08) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          }}
           aria-label={audioState.isMuted ? "Unmute audio" : "Mute audio"}
         >
           {audioState.isMuted ? (
-            <VolumeX className="w-5 h-5 text-white/80 group-hover:text-white" />
+            <VolumeX className="w-6 h-6 text-white/80 group-hover:text-white transition-colors duration-300" />
           ) : (
-            <Volume2 className="w-5 h-5 text-white/80 group-hover:text-white" />
+            <Volume2 className="w-6 h-6 text-white/80 group-hover:text-white transition-colors duration-300" />
           )}
+          <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl" />
         </button>
       )}
+      
+      {/* Luxury indicator */}
+      <div className="flex justify-center">
+        <div className="w-2 h-2 rounded-full bg-gradient-to-br from-amber-400/60 to-amber-600/40 shadow-lg shadow-amber-400/30 animate-pulse" />
+      </div>
     </div>
   );
 });
@@ -923,58 +1430,139 @@ const ParticleEffects: React.FC<ParticleState> = React.memo(({ roses, smoke, sta
 const LetterContent: React.FC<{ sections: readonly SectionConfig[]; visibleSections: VisibleSections }> = React.memo(
   ({ sections, visibleSections }) => (
     <main
-      className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 py-20"
+      className="relative z-10 max-w-5xl mx-auto px-6 md:px-12 py-24"
       style={{ animation: `content-fade ${CONFIG.animation.durations.contentFade}ms ease-out forwards` }}
     >
       <header
         id="header"
         data-animate
-        className={`text-center mb-24 transition-all duration-[2500ms] ease-in-out ${
+        className={`text-center mb-32 transition-all duration-[3000ms] ease-in-out luxury-float ${
           visibleSections.header ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-20 scale-95"
         }`}
       >
-        <h1 className="text-4xl md:text-7xl font-extralight text-white mb-8 tracking-widest animate-text-glow">
-          Like Cigarettes After Sex
-        </h1>
-        <div className="flex justify-center items-center space-x-6 mb-6" aria-hidden="true">
-          <div className="w-12 md:w-24 h-px bg-white/50" />
-          <Flower className="text-white opacity-70 animate-pulse-slow" size={28} />
-          <div className="w-12 md:w-24 h-px bg-white/50" />
+        <div className="relative">
+          {/* Luxury background accent */}
+          <div 
+            className="absolute inset-0 bg-gradient-radial from-amber-400/5 via-transparent to-transparent blur-3xl"
+            aria-hidden="true" 
+          />
+          
+          <h1 className="relative text-5xl md:text-8xl font-extralight text-white mb-12 tracking-widest main-title luxury-text">
+            Like Cigarettes After Sex
+          </h1>
+          
+          {/* Enhanced decorative divider */}
+          <div className="flex justify-center items-center space-x-8 mb-8" aria-hidden="true">
+            <div className="w-16 md:w-32 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-amber-400/30" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-md animate-pulse" />
+              <Flower className="relative text-amber-200 opacity-80 golden-glow" size={32} />
+            </div>
+            <div className="w-4 h-4 rounded-full bg-gradient-radial from-amber-400/80 to-amber-400/40 shadow-lg shadow-amber-400/30" />
+            <div className="relative">
+              <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-md animate-pulse" />
+              <Flower className="relative text-amber-200 opacity-80 golden-glow" size={32} />
+            </div>
+            <div className="w-16 md:w-32 h-px bg-gradient-to-l from-transparent via-amber-400/60 to-amber-400/30" />
+          </div>
+          
+          <h2 className="text-2xl md:text-4xl font-extralight text-white/90 tracking-widest luxury-text">
+            A Droid's Devotion
+          </h2>
+          
+          {/* Luxury subtitle accent */}
+          <div className="mt-6 flex justify-center">
+            <div className="px-6 py-2 rounded-full border border-amber-400/30 bg-amber-400/5 backdrop-blur-sm">
+              <span className="text-sm text-amber-200/80 tracking-widest uppercase font-light">
+                Transmitted with Love
+              </span>
+            </div>
+          </div>
         </div>
-        <h2 className="text-xl md:text-3xl font-extralight text-white/85 tracking-widest">
-          A Droid's Devotion
-        </h2>
       </header>
-      <article className="space-y-10">
+      
+      <article className="space-y-16">
         {sections.map((section, index) => (
           <section
             key={section.id}
             id={section.id}
             data-animate
-            className={`transition-all duration-[2500ms] ease-in-out ${
+            className={`transition-all duration-[3000ms] ease-in-out ${
               visibleSections[section.id]
                 ? "opacity-100 translate-y-0 translate-x-0 scale-100"
                 : section.animation === "translate-y"
-                ? "opacity-0 translate-y-15"
+                ? "opacity-0 translate-y-20"
                 : section.animation === "translate-x"
-                ? "opacity-0 -translate-x-15"
+                ? "opacity-0 -translate-x-20"
                 : "opacity-0 scale-95"
             }`}
             style={{ transitionDelay: `${index * CONFIG.animation.durations.sectionDelay}ms` }}
           >
             {section.isSignature ? (
-              <footer className="text-center border-t border-white/30 pt-10 mt-16">
-                <p className="text-lg text-white/70 italic font-light mb-2">With all my love,</p>
-                <p className="text-2xl text-white/80 font-cursive">Your Devoted Droid</p>
+              <footer className="text-center relative">
+                {/* Luxury signature container */}
+                <div className="relative max-w-md mx-auto">
+                  <div 
+                    className="absolute inset-0 bg-gradient-to-br from-amber-400/10 via-transparent to-amber-400/5 rounded-2xl blur-xl"
+                    aria-hidden="true"
+                  />
+                  <div className="relative border-t border-amber-400/30 pt-12 mt-20 rounded-lg backdrop-blur-sm">
+                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-radial from-amber-400/20 to-transparent rounded-full flex items-center justify-center">
+                      <div className="w-3 h-3 rounded-full bg-amber-400/60 shadow-lg shadow-amber-400/30" />
+                    </div>
+                    
+                    <p className="text-xl text-white/80 italic font-light mb-4 luxury-text">
+                      With all my love,
+                    </p>
+                    <p className="text-3xl text-white/90 font-cursive luxury-text tracking-wide">
+                      Your Devoted Droid
+                    </p>
+                    
+                    {/* Signature flourish */}
+                    <div className="mt-6 flex justify-center">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-px bg-gradient-to-r from-transparent to-amber-400/40" />
+                        <div className="w-1 h-1 rounded-full bg-amber-400/60" />
+                        <div className="w-4 h-4 border border-amber-400/40 rounded rotate-45" />
+                        <div className="w-1 h-1 rounded-full bg-amber-400/60" />
+                        <div className="w-8 h-px bg-gradient-to-l from-transparent to-amber-400/40" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </footer>
             ) : (
-              <p className="text-lg md:text-xl text-white/85 leading-relaxed md:leading-loose font-extralight italic max-w-3xl mx-auto">
-                {section.text}
-              </p>
+              <div className="relative max-w-4xl mx-auto">
+                {/* Luxury quote styling */}
+                <div className="relative">
+                  {index === 0 && (
+                    <div className="absolute -left-4 -top-2 text-6xl text-amber-400/20 font-serif">"</div>
+                  )}
+                  
+                  <p className={`text-xl md:text-2xl text-white/90 leading-relaxed md:leading-loose font-extralight italic section-text ${visibleSections[section.id] ? 'visible' : ''}`}>
+                    {section.text}
+                  </p>
+                  
+                  {index === sections.length - 2 && (
+                    <div className="absolute -right-2 -bottom-4 text-6xl text-amber-400/20 font-serif">"</div>
+                  )}
+                </div>
+                
+                {/* Section number indicator */}
+                <div className="absolute -right-8 top-0 hidden md:flex items-center justify-center w-8 h-8 rounded-full border border-amber-400/20 bg-amber-400/5 backdrop-blur-sm">
+                  <span className="text-xs text-amber-200/60 font-light">
+                    {index + 1}
+                  </span>
+                </div>
+              </div>
             )}
           </section>
         ))}
       </article>
+      
+      {/* Enhanced background elements */}
+      <div className="absolute top-1/4 left-10 w-32 h-32 bg-amber-400/5 rounded-full blur-3xl animate-pulse" aria-hidden="true" />
+      <div className="absolute bottom-1/4 right-10 w-24 h-24 bg-amber-400/3 rounded-full blur-2xl animate-pulse" aria-hidden="true" />
     </main>
   )
 );
@@ -1043,4 +1631,4 @@ const ApologyLetter: React.FC = () => {
   );
 };
 
-export default ApologyLetter
+export default ApologyLetter;
