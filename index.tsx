@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Flower, Volume2, VolumeX, Play, Pause } from "lucide-react";
+import { Flower, Volume2, VolumeX } from "lucide-react";
 
 // --- TYPE DEFINITIONS ---
 interface VisibleSections {
@@ -44,10 +44,12 @@ interface ParticleState {
   readonly starWarsCharacters: readonly StarWarsCharacter[];
 }
 
-interface UIState {
-  readonly showContent: boolean;
+interface AudioState {
+  readonly mainAudio: HTMLAudioElement | null;
+  readonly introAudio: HTMLAudioElement | null;
   readonly isMuted: boolean;
-  readonly isPlaying: boolean;
+  readonly isIntroPlaying: boolean;
+  readonly isMainPlaying: boolean;
   readonly audioError: boolean;
 }
 
@@ -56,7 +58,10 @@ type AnimationType = 'translate-x' | 'translate-y' | 'scale';
 
 // --- CONSTANTS & CONFIGURATION ---
 const CONFIG = {
-  audioSrc: "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3",
+  audio: {
+    mainSrc: "./CasCry.mp3",
+    introSrc: "https://www.soundjay.com/misc/sounds/chime-02.mp3", // Placeholder - you can replace with your intro music
+  },
   animation: {
     intervals: { roses: 3000, smoke: 1500, stars: 4000, starWars: 6000 },
     maxParticles: { roses: 8, smoke: 12, stars: 6, starWars: 4 },
@@ -415,39 +420,223 @@ const useIntroTransition = (introDuration: number) => {
   return { mounted, showContent, skipIntro };
 };
 
-const useAudio = (src: string) => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const [error, setError] = useState(false);
+const useAudioSystem = () => {
+  const mainAudioRef = useRef<HTMLAudioElement | null>(null);
+  const introAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioState, setAudioState] = useState<AudioState>({
+    mainAudio: null,
+    introAudio: null,
+    isMuted: false,
+    isIntroPlaying: false,
+    isMainPlaying: false,
+    audioError: false,
+  });
 
-  const toggleAudio = useCallback(async () => {
-    if (!audioRef.current || error) return;
-    try {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        await audioRef.current.play();
-        setIsPlaying(true);
-        if (isMuted) setIsMuted(false);
+  // Initialize audio elements with better error handling
+  useEffect(() => {
+    const initializeAudio = async () => {
+      console.log('Initializing audio system...');
+      
+      try {
+        // Initialize main audio
+        if (mainAudioRef.current) {
+          const mainAudio = mainAudioRef.current;
+          
+          // Set audio properties
+          mainAudio.volume = 0.7;
+          mainAudio.loop = true;
+          mainAudio.preload = 'auto';
+          
+          // Add event listeners for debugging
+          mainAudio.addEventListener('loadstart', () => console.log('Main audio: Load started'));
+          mainAudio.addEventListener('loadeddata', () => console.log('Main audio: Data loaded'));
+          mainAudio.addEventListener('canplay', () => console.log('Main audio: Can play'));
+          mainAudio.addEventListener('error', async (e) => {
+            console.error('Main audio error:', e);
+            console.error('Audio error details:', {
+              error: mainAudio.error,
+              networkState: mainAudio.networkState,
+              readyState: mainAudio.readyState,
+              src: mainAudio.src
+            });
+            
+            // Try fallback source if available
+            if (CONFIG.audio.fallbackSrc && mainAudio.src !== CONFIG.audio.fallbackSrc) {
+              console.log('Trying fallback audio source...');
+              mainAudio.src = CONFIG.audio.fallbackSrc;
+              mainAudio.load();
+              try {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await mainAudio.play();
+                setAudioState(prev => ({ ...prev, isMainPlaying: true, audioError: false }));
+              } catch (fallbackError) {
+                console.error('Fallback audio also failed:', fallbackError);
+                setAudioState(prev => ({ ...prev, audioError: true }));
+              }
+            } else {
+              setAudioState(prev => ({ ...prev, audioError: true }));
+            }
+          });
+          
+          // Try to load and play
+          console.log('Attempting to play main audio from:', CONFIG.audio.mainSrc);
+          
+          // Force load
+          mainAudio.load();
+          
+          // Wait a bit for loading
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Attempt to play
+          try {
+            const playPromise = mainAudio.play();
+            if (playPromise !== undefined) {
+              await playPromise;
+              console.log('Main audio playing successfully');
+              setAudioState(prev => ({ ...prev, isMainPlaying: true }));
+            }
+          } catch (playError) {
+            console.warn('Main audio autoplay blocked:', playError);
+            setAudioState(prev => ({ ...prev, audioError: true }));
+          }
+        }
+
+        // Initialize intro audio (less critical, so simpler handling)
+        if (introAudioRef.current) {
+          const introAudio = introAudioRef.current;
+          introAudio.volume = 0.3;
+          introAudio.loop = false;
+          
+          try {
+            const introPlayPromise = introAudio.play();
+            if (introPlayPromise !== undefined) {
+              await introPlayPromise;
+              console.log('Intro audio playing');
+              setAudioState(prev => ({ ...prev, isIntroPlaying: true }));
+            }
+          } catch (introError) {
+            console.warn('Intro audio autoplay blocked:', introError);
+          }
+        }
+      } catch (error) {
+        console.error("Audio initialization failed:", error);
+        setAudioState(prev => ({ ...prev, audioError: true }));
       }
-    } catch (err) {
-      console.warn("Audio playback failed:", err);
-      setError(true);
+    };
+
+    // Delay to ensure DOM is ready
+    const timer = setTimeout(initializeAudio, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle intro audio end
+  useEffect(() => {
+    const introAudio = introAudioRef.current;
+    if (!introAudio) return;
+
+    const handleIntroEnd = () => {
+      console.log('Intro audio ended');
+      setAudioState(prev => ({ ...prev, isIntroPlaying: false }));
+    };
+
+    introAudio.addEventListener('ended', handleIntroEnd);
+    return () => introAudio.removeEventListener('ended', handleIntroEnd);
+  }, []);
+
+  const toggleMainAudio = useCallback(async () => {
+    if (!mainAudioRef.current) {
+      console.error('Main audio ref is null');
+      return;
     }
-  }, [isPlaying, isMuted, error]);
+
+    const mainAudio = mainAudioRef.current;
+    console.log('Toggle main audio. Current state:', {
+      isPlaying: audioState.isMainPlaying,
+      paused: mainAudio.paused,
+      readyState: mainAudio.readyState,
+      src: mainAudio.src
+    });
+
+    try {
+      if (audioState.isMainPlaying && !mainAudio.paused) {
+        mainAudio.pause();
+        console.log('Main audio paused');
+        setAudioState(prev => ({ ...prev, isMainPlaying: false }));
+      } else {
+        // Force reload if needed
+        if (mainAudio.readyState === 0) {
+          console.log('Reloading audio...');
+          mainAudio.load();
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        await mainAudio.play();
+        console.log('Main audio playing');
+        setAudioState(prev => ({ ...prev, isMainPlaying: true, audioError: false }));
+      }
+    } catch (error) {
+      console.error("Audio control failed:", error);
+      setAudioState(prev => ({ ...prev, audioError: true }));
+    }
+  }, [audioState.isMainPlaying]);
 
   const toggleMute = useCallback(() => {
-    if (!audioRef.current || error) return;
-    setIsMuted(prev => !prev);
-  }, [error]);
+    console.log('Toggling mute');
+    setAudioState(prev => {
+      const newMuted = !prev.isMuted;
+      if (mainAudioRef.current) {
+        mainAudioRef.current.muted = newMuted;
+        console.log('Main audio muted:', newMuted);
+      }
+      if (introAudioRef.current) {
+        introAudioRef.current.muted = newMuted;
+      }
+      return { ...prev, isMuted: newMuted };
+    });
+  }, []);
 
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.muted = isMuted;
-  }, [isMuted]);
+  const enableAudioWithUserGesture = useCallback(async () => {
+    console.log('User gesture - enabling audio');
+    
+    try {
+      if (mainAudioRef.current && !audioState.isMainPlaying) {
+        const mainAudio = mainAudioRef.current;
+        
+        // Force reload if needed
+        if (mainAudio.readyState === 0) {
+          console.log('Force loading main audio...');
+          mainAudio.load();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
+        console.log('Attempting to play main audio via user gesture');
+        await mainAudio.play();
+        console.log('Main audio started via user gesture');
+        setAudioState(prev => ({ ...prev, isMainPlaying: true, audioError: false }));
+      }
+      
+      if (introAudioRef.current && !audioState.isIntroPlaying) {
+        try {
+          await introAudioRef.current.play();
+          setAudioState(prev => ({ ...prev, isIntroPlaying: true }));
+        } catch (introError) {
+          console.warn('Intro audio failed even with user gesture:', introError);
+        }
+      }
+    } catch (error) {
+      console.error("Manual audio start failed:", error);
+      setAudioState(prev => ({ ...prev, audioError: true }));
+    }
+  }, [audioState.isMainPlaying, audioState.isIntroPlaying]);
 
-  return { audioRef, toggleAudio, toggleMute, isPlaying, isMuted, error };
+  return {
+    mainAudioRef,
+    introAudioRef,
+    audioState,
+    toggleMainAudio,
+    toggleMute,
+    enableAudioWithUserGesture,
+  };
 };
 
 const useParticleEffects = (isEnabled: boolean) => {
@@ -563,7 +752,7 @@ const useSectionObserver = (isEnabled: boolean) => {
 };
 
 // --- CHILD COMPONENTS ---
-const IntroScreen: React.FC<{ onSkip: () => void }> = React.memo(({ onSkip }) => (
+const IntroScreen: React.FC<{ onSkip: () => void; onUserGesture: () => void }> = React.memo(({ onSkip, onUserGesture }) => (
   <div className="absolute inset-0 flex items-center justify-center z-50 bg-gradient-to-br from-gray-900 via-purple-900/20 to-black">
     <div className="relative flex flex-col items-center justify-center text-center px-4">
       <div
@@ -618,39 +807,44 @@ const IntroScreen: React.FC<{ onSkip: () => void }> = React.memo(({ onSkip }) =>
         </h1>
         <p className="text-sm text-white/60 tracking-widest uppercase">Transmitting Message...</p>
       </div>
-      <button
-        onClick={onSkip}
-        className="mt-8 text-white/70 hover:text-white text-sm glass-effect px-8 py-3 rounded-full hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 animate-button-glow"
-        aria-label="Skip intro animation"
-      >
-        View Message
-      </button>
+      <div className="flex gap-4 mt-8">
+        <button
+          onClick={() => { onUserGesture(); onSkip(); }}
+          className="text-white/70 hover:text-white text-sm glass-effect px-8 py-3 rounded-full hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 animate-button-glow"
+          aria-label="View message and enable audio"
+        >
+          View Message
+        </button>
+      </div>
     </div>
   </div>
 ));
 
-const AudioControls: React.FC<{ audio: ReturnType<typeof useAudio> }> = React.memo(({ audio }) => {
-  if (audio.error) return null;
+const AudioControls: React.FC<{ 
+  audioState: AudioState; 
+  onToggleMainAudio: () => void; 
+  onToggleMute: () => void;
+  onEnableAudio: () => void;
+}> = React.memo(({ audioState, onToggleMainAudio, onToggleMute, onEnableAudio }) => {
   return (
     <div className="fixed top-6 right-6 z-50 flex gap-3" role="toolbar" aria-label="Audio controls">
-      <button
-        onClick={audio.toggleAudio}
-        className="p-3 glass-effect rounded-full hover:bg-white/20 transition-all duration-300 animate-button-glow group focus:outline-none focus:ring-2 focus:ring-white/50"
-        aria-label={audio.isPlaying ? "Pause background music" : "Play background music"}
-      >
-        {audio.isPlaying ? (
-          <Pause className="w-5 h-5 text-white/80 group-hover:text-white" />
-        ) : (
-          <Play className="w-5 h-5 text-white/80 group-hover:text-white" />
-        )}
-      </button>
-      {audio.isPlaying && (
+      {audioState.audioError && (
         <button
-          onClick={audio.toggleMute}
-          className="p-3 glass-effect rounded-full hover:bg-white/20 transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-white/50"
-          aria-label={audio.isMuted ? "Unmute background music" : "Mute background music"}
+          onClick={onEnableAudio}
+          className="p-3 glass-effect rounded-full hover:bg-white/20 transition-all duration-300 animate-button-glow group focus:outline-none focus:ring-2 focus:ring-white/50 bg-yellow-500/20"
+          aria-label="Enable audio"
+          title="Click to enable audio"
         >
-          {audio.isMuted ? (
+          <Volume2 className="w-5 h-5 text-yellow-300 group-hover:text-yellow-100" />
+        </button>
+      )}
+      {!audioState.audioError && (
+        <button
+          onClick={onToggleMute}
+          className="p-3 glass-effect rounded-full hover:bg-white/20 transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-white/50"
+          aria-label={audioState.isMuted ? "Unmute audio" : "Mute audio"}
+        >
+          {audioState.isMuted ? (
             <VolumeX className="w-5 h-5 text-white/80 group-hover:text-white" />
           ) : (
             <Volume2 className="w-5 h-5 text-white/80 group-hover:text-white" />
@@ -788,7 +982,14 @@ const LetterContent: React.FC<{ sections: readonly SectionConfig[]; visibleSecti
 // --- MAIN COMPONENT ---
 const ApologyLetter: React.FC = () => {
   const { mounted, showContent, skipIntro } = useIntroTransition(CONFIG.animation.durations.intro);
-  const audio = useAudio(CONFIG.audioSrc);
+  const { 
+    mainAudioRef, 
+    introAudioRef, 
+    audioState, 
+    toggleMainAudio, 
+    toggleMute, 
+    enableAudioWithUserGesture 
+  } = useAudioSystem();
   const particles = useParticleEffects(showContent);
   const visibleSections = useSectionObserver(showContent);
 
@@ -796,22 +997,50 @@ const ApologyLetter: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-hidden relative font-serif">
-      <audio ref={audio.audioRef} loop preload="metadata" muted={audio.isMuted}>
-        <source src={CONFIG.audioSrc} type="audio/mpeg" />
+      {/* Main Audio - CasCry.mp3 */}
+      <audio 
+        ref={mainAudioRef} 
+        loop 
+        preload="auto" 
+        muted={audioState.isMuted}
+        playsInline
+      >
+        <source src={CONFIG.audio.mainSrc} type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
+      
+      {/* Intro Audio */}
+      <audio 
+        ref={introAudioRef} 
+        preload="auto" 
+        muted={audioState.isMuted}
+        playsInline
+      >
+        <source src={CONFIG.audio.introSrc} type="audio/mpeg" />
+        Your browser does not support the audio element.
+      </audio>
+
       <style>{componentStyles}</style>
+      
       {showContent ? (
         <>
-          <AudioControls audio={audio} />
+          <AudioControls 
+            audioState={audioState}
+            onToggleMainAudio={toggleMainAudio}
+            onToggleMute={toggleMute}
+            onEnableAudio={enableAudioWithUserGesture}
+          />
           <ParticleEffects {...particles} />
           <LetterContent sections={SECTIONS_CONFIG} visibleSections={visibleSections} />
         </>
       ) : (
-        <IntroScreen onSkip={skipIntro} />
+        <IntroScreen 
+          onSkip={skipIntro} 
+          onUserGesture={enableAudioWithUserGesture}
+        />
       )}
     </div>
   );
 };
 
-export default ApologyLetter;
+export default ApologyLetter
