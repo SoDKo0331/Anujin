@@ -60,8 +60,8 @@ type AnimationType = 'translate-x' | 'translate-y' | 'scale';
 const CONFIG = {
   audio: {
     mainSrc: "./cry.mp3",
-    introSrc: "https://www.soundjay.com/misc/sounds/chime-02.mp3", // Placeholder - you can replace with your intro music
-    fallbackSrc: "https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3", // Fallback audio source
+    introSrc: "./cry.mp3", // Placeholder - you can replace with your intro music
+    fallbackSrc: "./cry.mp3", // Fallback audio source
   },
   animation: {
     intervals: { roses: 3000, smoke: 1500, stars: 4000, starWars: 6000 },
